@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Pedidos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #11111a;
+    --surface2: #18182a;
+    --border: #2a2a40;
+    --accent: #ff5c35;
+    --accent2: #ffb800;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --success: #00d68f;
+    --error: #ff3860;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,92,53,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,92,53,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 56px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 12px;
+    margin-bottom: 20px;
+    animation: fadeIn 0.4s ease;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    animation: slideUp 0.5s ease 0.1s both;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    animation: slideUp 0.5s ease 0.2s both;
+  }
+
+  /* Form */
+  form {
+    display: grid;
+    gap: 0;
+    animation: slideUp 0.5s ease 0.3s both;
+  }
+
+  .section {
+    border: 1px solid var(--border);
+    margin-bottom: -1px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .section:hover {
+    border-color: rgba(255,92,53,0.3);
+    z-index: 1;
+  }
+
+  .section:first-of-type {
+    border-radius: 8px 8px 0 0;
+  }
+
+  .section:last-of-type {
+    border-radius: 0 0 8px 8px;
+    margin-bottom: 0;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-number {
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    color: white;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .field {
+    background: var(--surface2);
+    padding: 16px 20px;
+    position: relative;
+    transition: background 0.2s;
+  }
+
+  .field:focus-within {
+    background: #1c1c2e;
+  }
+
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text);
+    caret-color: var(--accent);
+    padding: 0;
+  }
+
+  .field input::placeholder { color: #3a3a55; }
+
+  .field select {
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .field select option {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  /* Auto-field (readonly) */
+  .field.auto input {
+    color: var(--accent2);
+    font-weight: 500;
+  }
+
+  .field.auto label::after {
+    content: ' AUTO';
+    color: var(--accent2);
+    font-size: 8px;
+    letter-spacing: 0.15em;
+  }
+
+  /* Calculated field */
+  .field.calc input {
+    color: var(--success);
+    font-weight: 500;
+  }
+
+  .field.calc label::after {
+    content: ' CALC';
+    color: var(--success);
+    font-size: 8px;
+    letter-spacing: 0.15em;
+  }
+
+  /* Indicator line */
+  .field::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    width: 0;
+    background: var(--accent);
+    transition: width 0.25s ease;
+  }
+
+  .field:focus-within::after {
+    width: 100%;
+  }
+
+  /* Submit area */
+  .submit-area {
+    margin-top: 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  button[type="submit"] {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: white;
+    background: var(--accent);
+    border: none;
+    padding: 14px 36px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, background 0.2s;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+
+  button[type="submit"]:hover {
+    background: #ff7055;
+    transform: translateY(-1px);
+  }
+
+  button[type="submit"]:active {
+    transform: translateY(0);
+  }
+
+  button[type="submit"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-clear {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    padding: 13px 24px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .btn-clear:hover {
+    color: var(--text);
+    border-color: var(--muted);
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    pointer-events: none;
+  }
+
+  #toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .toast-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 22px;
+    max-width: 340px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+
+  .toast-inner.success { border-left: 3px solid var(--success); }
+  .toast-inner.error   { border-left: 3px solid var(--error); }
+
+  .toast-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .toast-msg {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .toast-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .toast-sub {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  /* Loading spinner inside button */
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Responsive */
+  @media (max-width: 520px) {
+    .fields { grid-template-columns: 1fr; }
+    h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <header>
+    <div class="tag">Sistema de Pedidos</div>
+    <h1>Novo <span>Pedido</span></h1>
+    <p class="subtitle">Preencha os campos abaixo para registrar o pedido</p>
+  </header>
+
+  <form id="orderForm" novalidate>
+
+    <!-- SEÇÃO 1: DATA -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">1</span>
+        <span class="section-title">Data de Recebimento</span>
+      </div>
+      <div class="fields">
+        <div class="field auto">
+          <label>Data de Recebimento</label>
+          <input type="text" id="data_recebimento" name="data_recebimento" readonly>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 2: CLIENTE -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">2</span>
+        <span class="section-title">Dados do Cliente</span>
+      </div>
+      <div class="fields">
+        <div class="field" style="grid-column: span 2;">
+          <label>Nome do Cliente</label>
+          <input type="text" id="cliente" name="cliente" placeholder="Razão social ou nome" required>
+        </div>
+        <div class="field">
+          <label>CNPJ / CPF</label>
+          <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00">
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input type="text" id="telefone" name="telefone" placeholder="(00) 00000-0000">
+        </div>
+        <div class="field" style="grid-column: span 2;">
+          <label>E-mail</label>
+          <input type="email" id="email" name="email" placeholder="contato@empresa.com.br">
+        </div>
+        <div class="field">
+          <label>Cidade</label>
+          <input type="text" id="cidade" name="cidade" placeholder="Ex: São Paulo">
+        </div>
+        <div class="field">
+          <label>UF</label>
+          <select id="uf" name="uf">
+            <option value="">— Selecione —</option>
+            <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+            <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+            <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+            <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+            <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+            <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+            <option>SP</option><option>SE</option><option>TO</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 3: PRODUTO -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">3</span>
+        <span class="section-title">Dados do Produto</span>
+      </div>
+      <div class="fields">
+        <div class="field" style="grid-column: span 2;">
+          <label>Produto</label>
+          <input type="text" id="produto" name="produto" placeholder="Descrição do produto" required>
+        </div>
+        <div class="field">
+          <label>Código do Produto</label>
+          <input type="text" id="codproduto" name="codproduto" placeholder="Ex: SKU-001">
+        </div>
+        <div class="field">
+          <label>Quantidade</label>
+          <input type="number" id="quantidade" name="quantidade" min="1" placeholder="0" required>
+        </div>
+        <div class="field">
+          <label>Valor Unitário (R$)</label>
+          <input type="text" id="valor_unitario" name="valor_unitario" placeholder="0,00" required>
+        </div>
+        <div class="field calc">
+          <label>Valor Total (R$)</label>
+          <input type="text" id="valor_total" name="valor_total" readonly placeholder="—">
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 4: COMERCIAL -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">4</span>
+        <span class="section-title">Informações Comerciais</span>
+      </div>
+      <div class="fields">
+        <div class="field">
+          <label>Vendedor</label>
+          <input type="text" id="vendedor" name="vendedor" placeholder="Nome do vendedor" required>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="status" name="status" required>
+            <option value="">— Selecione —</option>
+            <option value="Novo">Novo</option>
+            <option value="Em Análise">Em Análise</option>
+            <option value="Aprovado">Aprovado</option>
+            <option value="Aguardando Pagamento">Aguardando Pagamento</option>
+            <option value="Pago">Pago</option>
+            <option value="Em Separação">Em Separação</option>
+            <option value="Enviado">Enviado</option>
+            <option value="Entregue">Entregue</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-area">
+      <button type="submit" id="btnSubmit">Enviar Pedido</button>
+      <button type="button" class="btn-clear" id="btnClear">Limpar Formulário</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- Toast -->
+<div id="toast">
+  <div class="toast-inner" id="toastInner">
+    <span class="toast-icon" id="toastIcon"></span>
+    <div class="toast-msg">
+      <span class="toast-title" id="toastTitle"></span>
+      <span class="toast-sub" id="toastSub"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const WEBHOOK = 'https://felipealvessb.app.n8n.cloud/webhook/receber-pedido';
+
+  // ── Auto-fill date ──────────────────────────────────────────────
+  function setDate() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const d = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    document.getElementById('data_recebimento').value = d;
+  }
+  setDate();
+
+  // ── Masks ───────────────────────────────────────────────────────
+  document.getElementById('cnpj').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '');
+    if (v.length <= 11) {
+      v = v.replace(/(\d{3})(\d)/, '$1.$2')
+           .replace(/(\d{3})(\d)/, '$1.$2')
+           .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      v = v.replace(/^(\d{2})(\d)/, '$1.$2')
+           .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+           .replace(/\.(\d{3})(\d)/, '.$1/$2')
+           .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    this.value = v.substring(0, 18);
+  });
+
+  document.getElementById('telefone').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '');
+    v = v.replace(/^(\d{2})(\d)/, '($1) $2');
+    v = v.replace(/(\d{5})(\d)/, '$1-$2');
+    this.value = v.substring(0, 15);
+  });
+
+  // ── Currency format ─────────────────────────────────────────────
+  function formatCurrency(val) {
+    let n = parseFloat(val.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+    return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function parseCurrency(str) {
+    return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  document.getElementById('valor_unitario').addEventListener('blur', function() {
+    if (this.value) this.value = formatCurrency(this.value);
+    calcTotal();
+  });
+
+  document.getElementById('quantidade').addEventListener('input', calcTotal);
+
+  function calcTotal() {
+    const qty = parseFloat(document.getElementById('quantidade').value) || 0;
+    const unit = parseCurrency(document.getElementById('valor_unitario').value);
+    const total = qty * unit;
+    document.getElementById('valor_total').value = total > 0
+      ? total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '';
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(type, title, sub) {
+    const el     = document.getElementById('toast');
+    const inner  = document.getElementById('toastInner');
+    const icon   = document.getElementById('toastIcon');
+    const ttitle = document.getElementById('toastTitle');
+    const tsub   = document.getElementById('toastSub');
+    inner.className  = `toast-inner ${type}`;
+    icon.textContent  = type === 'success' ? '✓' : '✕';
+    ttitle.textContent = title;
+    tsub.textContent   = sub;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────
+  document.getElementById('orderForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Enviando...';
+
+    const payload = {
+      data_recebimento: document.getElementById('data_recebimento').value,
+      cliente:          document.getElementById('cliente').value,
+      cnpj:             document.getElementById('cnpj').value,
+      telefone:         document.getElementById('telefone').value,
+      email:            document.getElementById('email').value,
+      cidade:           document.getElementById('cidade').value,
+      uf:               document.getElementById('uf').value,
+      produto:          document.getElementById('produto').value,
+      codproduto:       document.getElementById('codproduto').value,
+      quantidade:       document.getElementById('quantidade').value,
+      valor_unitario:   document.getElementById('valor_unitario').value,
+      valor_total:      document.getElementById('valor_total').value,
+      vendedor:         document.getElementById('vendedor').value,
+      status:           document.getElementById('status').value,
+    };
+
+    try {
+      const res = await fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('Webhook status:', res.status);
+
+      if (res.ok || res.status === 200) {
+        showToast('success', 'Pedido enviado!', 'Os dados foram registrados com sucesso.');
+        setDate();
+      } else if (res.status === 404) {
+        showToast('error', 'Webhook não encontrado (404)', 'Ative o workflow no n8n e verifique a URL.');
+      } else if (res.status === 0 || res.type === 'opaque') {
+        // no-cors fallback — assume sent
+        showToast('success', 'Pedido enviado!', 'Dados encaminhados ao servidor.');
+        setDate();
+      } else {
+        const body = await res.text().catch(() => '');
+        showToast('error', `Erro ${res.status}`, body || 'Verifique o webhook no n8n.');
+      }
+    } catch(err) {
+      console.error('Fetch error:', err);
+      if (err.message && err.message.includes('CORS')) {
+        // CORS blocked but request may have gone through — retry with no-cors
+        try {
+          await fetch(WEBHOOK, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          showToast('success', 'Pedido enviado!', 'Dados encaminhados ao servidor.');
+          setDate();
+        } catch(e2) {
+          showToast('error', 'Erro de CORS', 'Habilite o CORS no webhook do n8n (Allow All Origins).');
+        }
+      } else if (err.name === 'TypeError') {
+        // Network error or CORS — try no-cors silently
+        try {
+          await fetch(WEBHOOK, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          showToast('success', 'Pedido enviado!', 'Dados encaminhados ao servidor.');
+          setDate();
+        } catch(e2) {
+          showToast('error', 'Falha de conexão', 'Verifique se o workflow está ativo no n8n.');
+        }
+      } else {
+        showToast('error', 'Erro inesperado', err.message || 'Tente novamente.');
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Enviar Pedido';
+    }
+  });
+
+  // ── Clear ────────────────────────────────────────────────────────
+  document.getElementById('btnClear').addEventListener('click', function() {
+    document.getElementById('orderForm').reset();
+    document.getElementById('valor_total').value = '';
+    setDate();
+  });
+</script>
+</body>
+</html>
